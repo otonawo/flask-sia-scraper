@@ -1,7 +1,10 @@
+import os
+
 from flask import Flask, jsonify, request
 from scraper import scrape_student_data, scrape_schedule
 
 app = Flask(__name__)
+API_KEY = os.getenv('API_KEY')
 
 def extract_and_validate_request_data():
     try:
@@ -14,7 +17,16 @@ def extract_and_validate_request_data():
     except (TypeError, ValueError) as e:
         return None, None, str(e)
 
+def require_api_key(func):
+    def wrapper(*args, **kwargs):
+        api_key = request.headers.get('x-api-key')
+        if api_key != API_KEY:
+            return jsonify({"message": "Forbidden"}), 403
+        return func(*args, **kwargs)
+    return wrapper
+
 @app.route('/getStudentData', methods=['POST'])
+@require_api_key
 def get_student_data():
     nim, password, error = extract_and_validate_request_data()
     if error:
@@ -24,6 +36,7 @@ def get_student_data():
     return jsonify(student_data)
 
 @app.route('/getSchedule', methods=['POST'])
+@require_api_key
 def get_schedule():
     nim, password, error = extract_and_validate_request_data()
     if error:
