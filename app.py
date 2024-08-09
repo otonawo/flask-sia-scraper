@@ -1,7 +1,7 @@
 import os
-
 from flask import Flask, jsonify, request
 from scraper import scrape_student_data, scrape_schedule
+from functools import wraps
 
 app = Flask(__name__)
 API_KEY = os.getenv('API_KEY')
@@ -18,6 +18,7 @@ def extract_and_validate_request_data():
         return None, None, str(e)
 
 def require_api_key(func):
+    @wraps(func)
     def wrapper(*args, **kwargs):
         api_key = request.headers.get('x-api-key')
         if api_key != API_KEY:
